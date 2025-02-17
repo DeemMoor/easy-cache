@@ -2,6 +2,7 @@
 
 namespace Custom\EasyCache\Psr6;
 
+use Throwable;
 use DateTimeImmutable;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
@@ -49,33 +50,49 @@ class CachePool implements CacheItemPoolInterface
         return $result;
     }
 
-    public function hasItem($key)
+    public function hasItem($key): bool
     {
+        return $this->driver->has($key);
+    }
+
+    public function clear(): bool
+    {
+        try {
+            $this->driver->clear();
+            return true;
+        } catch (Throwable $exception) {
+            return false;
+        }
 
     }
 
-    public function clear()
+    public function deleteItem($key): bool
     {
-        // TODO: Implement clear() method.
+        try {
+            $this->driver->delete($key);
+            return true;
+        } catch (Throwable $exception) {
+            return false;
+        }
     }
 
-    public function deleteItem($key)
+    public function deleteItems(array $keys): void
     {
-        // TODO: Implement deleteItem() method.
+        foreach ($keys as $key) {
+            $this->deleteItem($key);
+        }
     }
 
-    public function deleteItems(array $keys)
+    public function saveDeferred(CacheItemInterface $item): void
     {
-        // TODO: Implement deleteItems() method.
+        $this->deferred[] = $item;
     }
 
-    public function saveDeferred(CacheItemInterface $item)
+    public function commit(): true
     {
-        // TODO: Implement saveDeferred() method.
-    }
-
-    public function commit()
-    {
-        // TODO: Implement commit() method.
+        foreach ($this->deferred as $item) {
+            $this->save($item);
+        }
+        return true;
     }
 }
